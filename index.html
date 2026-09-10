@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>NeoCalc – Cálculos e Scores em Neonatologia</title>
+
+<!-- PWA / App meta -->
+<meta name="application-name" content="NeoCalc"/>
+<meta name="apple-mobile-web-app-title" content="NeoCalc"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#1E2D6E"/>
+<meta name="description" content="Cálculos e Scores em Neonatologia — UTI Neonatal"/>
+
+<!-- Ícone inline como SVG → base64 para apple-touch-icon e favicon -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%231E2D6E'/%3E%3Ccircle cx='256' cy='200' r='100' fill='%234F6EF7' opacity='.3'/%3E%3Ctext x='256' y='240' font-family='Arial,sans-serif' font-size='160' font-weight='900' fill='white' text-anchor='middle'%3E%F0%9F%91%B6%3C/text%3E%3Ctext x='256' y='340' font-family='Arial,sans-serif' font-size='72' font-weight='900' fill='white' text-anchor='middle'%3ENeo%3C/text%3E%3Ctext x='256' y='410' font-family='Arial,sans-serif' font-size='52' font-weight='700' fill='%237C9EFF' text-anchor='middle'%3ECalc%3C/text%3E%3C/svg%3E"/>
+
+<!-- Apple touch icon — PNG via canvas gerado inline -->
+<link id="apple-icon" rel="apple-touch-icon" href=""/>
+
+<!-- Manifest inline via blob -->
+<link id="manifest-link" rel="manifest" href=""/>
+
+<script>
+// Gera o ícone PNG 512x512 via Canvas e aplica como apple-touch-icon + manifest
+(function(){
+  try {
+    const size = 512;
+    const c = document.createElement("canvas");
+    c.width = c.height = size;
+    const ctx = c.getContext("2d");
+
+    // Fundo azul escuro com cantos arredondados
+    const r = 110;
+    ctx.beginPath();
+    ctx.moveTo(r,0); ctx.lineTo(size-r,0);
+    ctx.quadraticCurveTo(size,0,size,r);
+    ctx.lineTo(size,size-r);
+    ctx.quadraticCurveTo(size,size,size-r,size);
+    ctx.lineTo(r,size);
+    ctx.quadraticCurveTo(0,size,0,size-r);
+    ctx.lineTo(0,r);
+    ctx.quadraticCurveTo(0,0,r,0);
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0,0,0,size);
+    grad.addColorStop(0,"#1E2D6E");
+    grad.addColorStop(1,"#162255");
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Círculo de brilho
+    const grd2 = ctx.createRadialGradient(256,180,10,256,180,160);
+    grd2.addColorStop(0,"rgba(79,110,247,0.45)");
+    grd2.addColorStop(1,"rgba(79,110,247,0)");
+    ctx.fillStyle = grd2;
+    ctx.beginPath(); ctx.arc(256,200,170,0,Math.PI*2); ctx.fill();
+
+    // Emoji bebê
+    ctx.font = "220px serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("👶", 256, 220);
+
+    // Texto "Neo"
+    ctx.font = "bold 88px Arial,sans-serif";
+    ctx.fillStyle = "#FFFFFF";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText("Neo", 256, 358);
+
+    // Texto "Calc"
+    ctx.font = "bold 64px Arial,sans-serif";
+    ctx.fillStyle = "#7C9EFF";
+    ctx.fillText("Calc", 256, 428);
+
+    const png = c.toDataURL("image/png");
+
+    // Apple touch icon
+    document.getElementById("apple-icon").href = png;
+
+    // Manifest
+    const manifest = {
+      name: "NeoCalc – Neonatologia",
+      short_name: "NeoCalc",
+      description: "Cálculos e Scores em Neonatologia",
+      start_url: "./",
+      display: "standalone",
+      orientation: "portrait",
+      background_color: "#1E2D6E",
+      theme_color: "#1E2D6E",
+      icons: [
+        { src: png, sizes: "512x512", type: "image/png", purpose: "any maskable" },
+        { src: png, sizes: "192x192", type: "image/png" }
+      ]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type:"application/json"});
+    document.getElementById("manifest-link").href = URL.createObjectURL(blob);
+  } catch(e){ console.warn("Icon generation failed", e); }
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<!-- Sem babel-standalone: o JSX é pré-transpilado em build para ./app.js.
+     Fonte legível: src/app.jsx  ·  rebuild: bash build/build.sh -->
+
+<style>
+  /* ── RESET & BASE ── */
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px;-webkit-text-size-adjust:100%}
+  body{
+    font-family:'Nunito','Segoe UI',system-ui,sans-serif;
+    background:#F0F4FF;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar{width:4px;height:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:rgba(79,110,247,0.25);border-radius:4px}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(79,110,247,0.5)}
+
+  /* ── FORM ELEMENTS ── */
+  input,textarea,select,button{font-family:'Nunito','Segoe UI',sans-serif}
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button{opacity:0.4}
+  input:focus,textarea:focus,select:focus{outline:none}
+
+  /* ── ANIMATIONS ── */
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+  @keyframes pulseRing{0%{transform:scale(1);opacity:0.8}100%{transform:scale(1.8);opacity:0}}
+  @keyframes slideInRight{from{transform:translateX(28px);opacity:0}to{transform:translateX(0);opacity:1}}
+  @keyframes slideInLeft{from{transform:translateX(-28px);opacity:0}to{transform:translateX(0);opacity:1}}
+  @keyframes fadeInUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(0.94)}to{opacity:1;transform:scale(1)}}
+  @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes gradShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  @keyframes toastIn{from{transform:translateY(-20px) translateX(-50%);opacity:0}to{transform:translateY(0) translateX(-50%);opacity:1}}
+
+  /* ── GLASS MORPHISM ── */
+  .glass{
+    background:rgba(255,255,255,0.72);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+  }
+  .glass-dark{
+    background:rgba(30,45,110,0.85);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+  }
+
+  /* ── CARD HOVER ── */
+  .card-hover{transition:transform 0.2s cubic-bezier(.4,0,.2,1),box-shadow 0.2s cubic-bezier(.4,0,.2,1)}
+  .card-hover:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(79,110,247,0.18) !important}
+  .card-hover:active{transform:scale(0.97)}
+
+  /* ── BUTTON PRESS ── */
+  .btn-press{transition:transform 0.12s,box-shadow 0.12s}
+  .btn-press:active{transform:scale(0.95)}
+
+  /* ── SIDEBAR ITEM ── */
+  .nav-item{transition:all 0.18s cubic-bezier(.4,0,.2,1)}
+  .nav-item:hover{background:rgba(255,255,255,0.1) !important}
+  .nav-item:active{transform:scale(0.97)}
+
+  /* ── GRADIENT TEXT ── */
+  .grad-text{
+    background:linear-gradient(135deg,#4F6EF7,#7C9EFF);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+  }
+
+  /* ── LIVE BADGE ── */
+  .live-dot{
+    position:relative;
+    display:inline-block;
+    width:8px;height:8px;
+  }
+  .live-dot::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    border-radius:50%;
+    background:#22C55E;
+    animation:pulseRing 1.8s infinite;
+  }
+  .live-dot::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    border-radius:50%;
+    background:#22C55E;
+  }
+
+  /* ── MODAL BACKDROP ── */
+  .modal-backdrop{animation:fadeIn 0.2s ease}
+  .modal-content{animation:scaleIn 0.22s cubic-bezier(.4,0,.2,1)}
+
+  /* ── PAGE TRANSITION ── */
+  .page-enter{animation:fadeInUp 0.28s cubic-bezier(.4,0,.2,1)}
+
+  /* ── SAFE AREA (iPhone notch) ── */
+  .safe-top{padding-top:env(safe-area-inset-top,0px)}
+  .safe-bottom{padding-bottom:env(safe-area-inset-bottom,0px)}
+
+  /* ── BOTTOM NAV (mobile) ── */
+  .bottom-nav-item{transition:all 0.18s cubic-bezier(.4,0,.2,1);cursor:pointer}
+  .bottom-nav-item:active{transform:scale(0.88)}
+
+  /* ── SCORE CARD ── */
+  .score-card{
+    transition:all 0.2s cubic-bezier(.4,0,.2,1);
+    cursor:pointer;
+  }
+  .score-card:hover{transform:translateY(-4px) scale(1.02)}
+  .score-card:active{transform:scale(0.96)}
+
+  /* ── INPUT FOCUS RING ── */
+  input:focus,textarea:focus,select:focus{
+    border-color:#4F6EF7 !important;
+    box-shadow:0 0 0 3px rgba(79,110,247,0.15) !important;
+  }
+
+  /* ── RANGE SLIDER ── */
+  input[type=range]{
+    -webkit-appearance:none;
+    height:4px;
+    border-radius:2px;
+    background:#E5E7EB;
+    cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:18px;height:18px;
+    border-radius:50%;
+    background:var(--accent,#4F6EF7);
+    box-shadow:0 2px 6px rgba(79,110,247,0.4);
+    cursor:pointer;
+    transition:transform 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+
+  /* ── CHECKBOX ── */
+  input[type=checkbox]{
+    width:16px;height:16px;
+    accent-color:#4F6EF7;
+    cursor:pointer;
+  }
+
+  /* ── SKELETON LOADER ── */
+  .skeleton{
+    background:linear-gradient(90deg,#F0F4FF 25%,#E8EDFF 50%,#F0F4FF 75%);
+    background-size:200% 100%;
+    animation:shimmer 1.4s infinite;
+    border-radius:8px;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- SERVICE WORKER — offline support (arquivo real ./sw.js) -->
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js')
+      .catch(err=>console.warn('SW: registro falhou —',err));
+  });
+}
+</script>
+
+<!-- ?v= evita cache velho do navegador após um deploy.
+     Suba o número junto com CACHE_VERSION do sw.js (e no PRECACHE do sw.js). -->
+<script src="./app.js?v=4"></script>
+</body>
+</html>
